@@ -1,0 +1,31 @@
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+
+// Server client — runs as the signed-in user (RLS enforced). For server
+// components, route handlers, and server actions.
+export function createClient() {
+  const cookieStore = cookies();
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
+          // Setting cookies from a Server Component throws; middleware refreshes
+          // the session, so we can safely ignore that case here.
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            /* called from a Server Component — ignore */
+          }
+        },
+      },
+    }
+  );
+}

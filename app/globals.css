@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Vort Brand Design Language v1.0 — CSS token reference (§14)
+   Every value here is a token: use it, do not reinterpret it.
+   ============================================================ */
+:root {
+  /* Brand */
+  --primary: #e9638f;
+  --primary-dark: #d8456f;
+  --primary-light: #fbe0e9;
+
+  /* Surface */
+  --bg: #fcfafb;
+  --surface: #ffffff;
+  --surface-alt: #f6eff2;
+  --surface-muted: #f3edef;
+
+  /* Foreground */
+  --fg: #2b2326;
+  --fg-secondary: #4a3940;
+  --fg-muted: #76696d;
+  --fg-placeholder: #a8a0a3;
+
+  /* Borders */
+  --border: #e8dde2;
+  --input: #e8dde2;
+  --ring: #e9638f;
+
+  /* Semantic (product only) */
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --destructive: #dc2626;
+
+  /* Type — families are wired to next/font variables in layout.tsx */
+  --font-body: var(--font-heebo), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-display), var(--font-heebo), ui-sans-serif, sans-serif;
+  --font-mono: var(--font-jetbrains), "SF Mono", monospace;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  /* Numbers stay LTR even in Hebrew context (§12) */
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Headings use the display face (§5.1) */
+h1, h2, h3, .font-heading {
+  font-family: var(--font-heading);
+  letter-spacing: -0.02em;
+}
+
+/* Focus ring per §11.2 */
+.focus-ring:focus-visible {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px hsla(340, 75%, 65%, 0.15);
+}
+
+/* Numbers/time render LTR + tabular even inside RTL text (§12) */
+.num {
+  direction: ltr;
+  unicode-bidi: embed;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Reserve motion (§8.4) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
