@@ -2,10 +2,8 @@ import type { Metadata } from "next";
 import { Heebo, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { LangProvider } from "@/components/LangProvider";
-import { getLang } from "@/lib/lang-server";
-import { dirFor } from "@/lib/i18n";
+import { AuthProvider } from "@/components/AuthProvider";
 
-// Body / UI (§5.1). Heebo carries Hebrew + English equally — Vort is RTL-native.
 const heebo = Heebo({
   subsets: ["hebrew", "latin"],
   weight: ["400", "500", "700"],
@@ -13,7 +11,6 @@ const heebo = Heebo({
   display: "swap",
 });
 
-// Display fallback for TelAviv Brutalist (the doc's approved fallback is Inter Bold).
 const inter = Inter({
   subsets: ["latin"],
   weight: ["700", "800"],
@@ -21,7 +18,6 @@ const inter = Inter({
   display: "swap",
 });
 
-// Numeric / technical surfaces (§5.1).
 const jetbrains = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "700"],
@@ -34,20 +30,22 @@ export const metadata: Metadata = {
   description: "Employee time tracking",
 };
 
+// Defaults to English/LTR; LangProvider restores the saved language on mount.
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const lang = getLang();
   return (
     <html
-      lang={lang}
-      dir={dirFor(lang)}
+      lang="en"
+      dir="ltr"
       className={`${heebo.variable} ${inter.variable} ${jetbrains.variable}`}
     >
       <body>
-        <LangProvider initial={lang}>{children}</LangProvider>
+        <LangProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </LangProvider>
       </body>
     </html>
   );

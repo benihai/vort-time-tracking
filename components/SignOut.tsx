@@ -2,21 +2,21 @@
 
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/Button";
+import { useAuth } from "@/components/AuthProvider";
 import { useLang } from "@/components/LangProvider";
+import { Button } from "@/components/ui/Button";
 
 export function SignOut() {
   const router = useRouter();
+  const { signOut } = useAuth();
   const { t } = useLang();
   return (
     <Button
       variant="ghost"
       size="sm"
       onClick={async () => {
-        await createClient().auth.signOut();
+        await signOut();
         router.replace("/login");
-        router.refresh();
       }}
     >
       <LogOut size={16} strokeWidth={1.75} />

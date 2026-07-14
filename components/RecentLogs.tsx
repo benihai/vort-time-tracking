@@ -1,28 +1,32 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Trash2, Clock3 } from "lucide-react";
-import { deleteLog } from "@/app/dashboard/actions";
+import { deleteLog } from "@/lib/api";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { durationHours, formatHoursLabel, hhmm } from "@/lib/time";
 import { useLang } from "@/components/LangProvider";
 import type { TimeLog } from "@/lib/types";
 
-export function RecentLogs({ logs }: { logs: TimeLog[] }) {
-  const router = useRouter();
+export function RecentLogs({
+  logs,
+  userId,
+  onChanged,
+}: {
+  logs: TimeLog[];
+  userId: string;
+  onChanged: () => void;
+}) {
   const { t } = useLang();
-  const [pending, startTransition] = useTransition();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const pending = busyId !== null;
 
-  function onDelete(id: string) {
+  async function onDelete(id: string) {
     if (!confirm(t("recent.confirmDelete"))) return;
     setBusyId(id);
-    startTransition(async () => {
-      await deleteLog(id);
-      setBusyId(null);
-      router.refresh();
-    });
+    await deleteLog(id, userId);
+    setBusyId(null);
+    onChanged();
   }
 
   return (

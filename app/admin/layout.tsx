@@ -1,19 +1,20 @@
-import { requireProfile } from "@/lib/auth";
-import { AppHeader } from "@/components/AppHeader";
+"use client";
 
-export const dynamic = "force-dynamic";
+import { AppHeader } from "@/components/AppHeader";
+import { RequireAuth } from "@/components/RequireAuth";
 
 // Management area shell — admin only (employees are bounced to /dashboard).
-export default async function AdminLayout({
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { profile } = await requireProfile("admin");
   return (
-    <div className="min-h-screen">
-      <AppHeader profile={profile} />
-      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">{children}</main>
-    </div>
+    <RequireAuth role="admin">
+      <div className="min-h-screen">
+        <AppHeader />
+        <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">{children}</main>
+      </div>
+    </RequireAuth>
   );
 }

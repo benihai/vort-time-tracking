@@ -7,8 +7,12 @@ import {
   useMemo,
   useState,
 } from "react";
-import { useRouter } from "next/navigation";
-import { dirFor, t as translate, type Lang } from "@/lib/i18n";
+import {
+  DEFAULT_LANG,
+  dirFor,
+  t as translate,
+  type Lang,
+} from "@/lib/i18n";
 
 type LangContextValue = {
   lang: Lang;
@@ -19,31 +23,32 @@ type LangContextValue = {
 };
 
 const LangContext = createContext<LangContextValue | null>(null);
+const STORAGE_KEY = "lang";
 
-export function LangProvider({
-  initial,
-  children,
-}: {
-  initial: Lang;
-  children: React.ReactNode;
-}) {
-  const router = useRouter();
-  const [lang, setLangState] = useState<Lang>(initial);
+function apply(lang: Lang) {
+  document.documentElement.lang = lang;
+  document.documentElement.dir = dirFor(lang);
+}
 
-  // Stay in sync with the server-provided value after a refresh.
-  useEffect(() => setLangState(initial), [initial]);
+export function LangProvider({ children }: { children: React.ReactNode }) {
+  const [lang, setLangState] = useState<Lang>(DEFAULT_LANG);
+
+  // Restore the saved language on mount (client-only; no server/cookies on
+  // a static host).
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved === "he" || saved === "en") {
+      setLangState(saved);
+      apply(saved);
+    }
+  }, []);
 
   const value = useMemo<LangContextValue>(() => {
     function setLang(next: Lang) {
-      document.cookie = `lang=${next}; path=/; max-age=31536000; samesite=lax`;
-      // Update <html> immediately for a snappy flip, then refresh so server
-      // components re-render in the new language.
-      document.documentElement.lang = next;
-      document.documentElement.dir = dirFor(next);
+      localStorage.setItem(STORAGE_KEY, next);
+      apply(next);
       setLangState(next);
-      router.refresh();
     }
-
     return {
       lang,
       dir: dirFor(lang),
@@ -51,7 +56,7 @@ export function LangProvider({
       setLang,
       toggle: () => setLang(lang === "he" ? "en" : "he"),
     };
-  }, [lang, router]);
+  }, [lang]);
 
   return <LangContext.Provider value={value}>{children}</LangContext.Provider>;
 }

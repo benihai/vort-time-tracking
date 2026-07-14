@@ -28,22 +28,31 @@ the first admin.
 
 ---
 
-## Deploy (get a shareable link)
+## Deploy — GitHub Pages
 
-The app runs anywhere that hosts Next.js. The easiest is **Vercel**:
+Live URL: **https://benihai.github.io/vort-time-tracking/**
 
-1. Push this repo to GitHub (done, if you're reading this there).
-2. Go to [vercel.com/new](https://vercel.com/new), sign in with GitHub, and
-   **Import** this repository.
-3. Add two Environment Variables (from Supabase → **Project Settings → API**):
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-4. **Deploy.** Vercel gives you a public `https://<name>.vercel.app` URL to
-   share. Every push to `main` redeploys automatically.
+The app is a **static client-side build** (Next.js `output: 'export'`) that
+talks to Supabase directly from the browser. It deploys to GitHub Pages
+automatically via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
+on every push to `main`.
 
-No extra Supabase config is needed for the deployed URL — the app uses
-email/password auth (no redirect URLs), and Supabase's API accepts requests
-from any origin by default.
+How it's wired:
+
+- **Pages source:** GitHub Actions (Settings → Pages → Build: GitHub Actions).
+- **Build-time config:** the two public Supabase values are stored as repo
+  **Actions Variables** (`NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY`) and baked into the bundle. They are safe to
+  ship publicly — data is protected by Supabase **Row Level Security**.
+- **basePath:** the site lives under `/vort-time-tracking`, set in
+  [`next.config.js`](next.config.js).
+
+No extra Supabase config is needed — the app uses email/password auth (no
+redirect URLs), and Supabase's API accepts requests from any origin.
+
+> Trade-off vs. a server host: there's no server-side route protection (RLS
+> still fully protects the data), and the anon key ships in the client bundle
+> (by design in Supabase).
 
 ---
 

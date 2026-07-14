@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { AlertCircle, CheckCircle2, Loader2, Plus } from "lucide-react";
-import { addLog } from "@/app/dashboard/actions";
+import { addLog } from "@/lib/api";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Field } from "@/components/ui/Field";
+import { Input } from "@/components/ui/Input";
 import { TimeInput } from "@/components/ui/TimeInput";
 import {
   durationHours,
@@ -18,8 +17,15 @@ import {
 } from "@/lib/time";
 import { useLang } from "@/components/LangProvider";
 
-export function LogForm({ maxDate }: { maxDate: string }) {
-  const router = useRouter();
+export function LogForm({
+  maxDate,
+  userId,
+  onSaved,
+}: {
+  maxDate: string;
+  userId: string;
+  onSaved: () => void;
+}) {
   const { t } = useLang();
   const [date, setDate] = useState(maxDate);
   const [start, setStart] = useState("");
@@ -50,26 +56,24 @@ export function LogForm({ maxDate }: { maxDate: string }) {
     }
 
     setLoading(true);
-
-    // Build FormData from controlled state (times come from custom inputs).
-    const fd = new FormData();
-    fd.set("work_date", date);
-    fd.set("start_time", s);
-    fd.set("end_time", en);
-    fd.set("description", description);
-
-    const result = await addLog(fd);
+    const result = await addLog({
+      userId,
+      work_date: date,
+      start_time: s,
+      end_time: en,
+      description,
+    });
     setLoading(false);
 
     if (!result.ok) {
-      setStatus({ type: "error", msg: result.error });
+      setStatus({ type: "error", msg: t(result.key) });
       return;
     }
     setStatus({ type: "ok", msg: t("form.success") });
     setStart("");
     setEnd("");
     setDescription("");
-    router.refresh();
+    onSaved();
   }
 
   return (

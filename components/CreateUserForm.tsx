@@ -1,28 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { AlertCircle, CheckCircle2, Loader2, UserPlus } from "lucide-react";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Field } from "@/components/ui/Field";
 import { useLang } from "@/components/LangProvider";
-import { createClient } from "@/lib/supabase/client";
+import { createUser } from "@/lib/api";
 import type { Role } from "@/lib/types";
 
 const empty = { full_name: "", email: "", password: "", role: "employee" as Role };
 
-// Maps the RPC's raise-exception messages to localized dictionary keys.
-const ERROR_KEYS: Record<string, string> = {
-  forbidden: "users.errForbidden",
-  invalid_email: "users.errEmail",
-  weak_password: "users.errPassword",
-  email_exists: "users.errExists",
-};
-
-export function CreateUserForm() {
-  const router = useRouter();
+export function CreateUserForm({ onCreated }: { onCreated: () => void }) {
   const { t } = useLang();
   const [form, setForm] = useState(empty);
   const [status, setStatus] = useState<
@@ -46,18 +36,16 @@ export function CreateUserForm() {
 
     // Calls the SECURITY DEFINER RPC with the admin's own session — no
     // service-role key required. The function enforces is_admin() itself.
-    const supabase = createClient();
-    const { error } = await supabase.rpc("admin_create_user", {
-      p_email: form.email,
-      p_password: form.password,
-      p_full_name: form.full_name,
-      p_role: form.role,
+    const result = await createUser({
+      email: form.email,
+      password: form.password,
+      full_name: form.full_name,
+      role: form.role,
     });
     setLoading(false);
 
-    if (error) {
-      const key = ERROR_KEYS[error.message?.trim()] ?? "users.errFailed";
-      setStatus({ type: "error", msg: t(key) });
+    if (!result.ok) {
+      setStatus({ type: "error", msg: t(result.key) });
       return;
     }
     setStatus({
@@ -65,7 +53,7 @@ export function CreateUserForm() {
       msg: t("users.created", { name: form.full_name }),
     });
     setForm(empty);
-    router.refresh();
+    onCreated();
   }
 
   return (

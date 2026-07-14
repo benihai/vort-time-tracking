@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Field } from "@/components/ui/Field";
 import { useLang } from "@/components/LangProvider";
+import { useAuth } from "@/components/AuthProvider";
 
 export function LoginForm() {
   const router = useRouter();
   const { t } = useLang();
+  const { refresh } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -34,9 +36,9 @@ export function LoginForm() {
       return;
     }
 
-    // Session cookie is set; go home and let the server route by role.
-    router.replace("/");
-    router.refresh();
+    // Session is persisted; sync the auth context, then enter the app.
+    await refresh();
+    router.replace("/dashboard");
   }
 
   return (

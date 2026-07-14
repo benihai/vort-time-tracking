@@ -1,69 +1,62 @@
-import { requireProfile } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
 import { LogForm } from "@/components/LogForm";
 import { SummaryCards } from "@/components/SummaryCards";
 import { RecentLogs } from "@/components/RecentLogs";
+import { useAuth } from "@/components/AuthProvider";
+import { useLang } from "@/components/LangProvider";
+import { fetchMyLogs } from "@/lib/api";
 import { durationHours, monthStart, todayISO } from "@/lib/time";
-import { getLang } from "@/lib/lang-server";
-import { t } from "@/lib/i18n";
 import type { TimeLog } from "@/lib/types";
 
-export const dynamic = "force-dynamic";
-
-export default async function DashboardPage() {
-  const { profile, userId } = await requireProfile();
-  const supabase = createClient();
-  const lang = getLang();
+export default function DashboardPage() {
+  const { user, profile } = useAuth();
+  const { t } = useLang();
+  const [monthLogs, setMonthLogs] = useState<TimeLog[]>([]);
+  const [recent, setRecent] = useState<TimeLog[]>([]);
 
   const today = todayISO();
-  const first = monthStart(today);
 
-  // Personal views are always scoped to the current user — even for admins,
-  // whose RLS would otherwise return everyone's logs. (The /admin timesheet is
-  // the place that shows all users.)
-  const { data: monthLogs } = await supabase
-    .from("time_logs")
-    .select("*")
-    .eq("user_id", userId)
-    .gte("work_date", first)
-    .order("work_date", { ascending: false })
-    .order("start_time", { ascending: false });
+  const load = useCallback(async () => {
+    if (!user) return;
+    const [month, all] = await Promise.all([
+      fetchMyLogs(user.id, { from: monthStart(today) }),
+      fetchMyLogs(user.id),
+    ]);
+    setMonthLogs(month);
+    setRecent(all.slice(0, 15));
+  }, [user, today]);
 
-  const { data: recent } = await supabase
-    .from("time_logs")
-    .select("*")
-    .eq("user_id", userId)
-    .order("work_date", { ascending: false })
-    .order("start_time", { ascending: false })
-    .limit(15);
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  const month = (monthLogs ?? []) as TimeLog[];
   const sum = (rows: TimeLog[]) =>
     rows.reduce((acc, r) => acc + durationHours(r.start_time, r.end_time), 0);
-
-  const todayTotal = sum(month.filter((r) => r.work_date === today));
-  const monthTotal = sum(month);
+  const todayTotal = sum(monthLogs.filter((r) => r.work_date === today));
+  const monthTotal = sum(monthLogs);
 
   return (
     <div>
       <div className="mb-6">
         <h1 className="text-2xl text-fg">
-          {profile.full_name
-            ? t(lang, "dash.greeting", { name: profile.full_name })
-            : t(lang, "dash.greetingNoName")}
+          {profile?.full_name
+            ? t("dash.greeting", { name: profile.full_name })
+            : t("dash.greetingNoName")}
         </h1>
-        <p className="text-base text-fg-muted">{t(lang, "dash.subtitle")}</p>
+        <p className="text-base text-fg-muted">{t("dash.subtitle")}</p>
       </div>
 
       <SummaryCards
         todayHours={todayTotal}
         monthHours={monthTotal}
-        entriesThisMonth={month.length}
+        entriesThisMonth={monthLogs.length}
       />
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-        <LogForm maxDate={today} />
-        <RecentLogs logs={(recent ?? []) as TimeLog[]} />
+        <LogForm maxDate={today} userId={user?.id ?? ""} onSaved={load} />
+        <RecentLogs logs={recent} userId={user?.id ?? ""} onChanged={load} />
       </div>
     </div>
   );

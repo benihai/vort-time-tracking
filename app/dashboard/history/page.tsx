@@ -1,33 +1,28 @@
-import { requireProfile } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
+"use client";
+
+import { useEffect, useState } from "react";
 import { MonthReport } from "@/components/MonthReport";
-import { getLang } from "@/lib/lang-server";
-import { t } from "@/lib/i18n";
+import { useAuth } from "@/components/AuthProvider";
+import { useLang } from "@/components/LangProvider";
+import { fetchMyLogs } from "@/lib/api";
 import type { TimeLog } from "@/lib/types";
 
-export const dynamic = "force-dynamic";
+export default function HistoryPage() {
+  const { user } = useAuth();
+  const { t } = useLang();
+  const [logs, setLogs] = useState<TimeLog[]>([]);
 
-export default async function HistoryPage() {
-  const { userId } = await requireProfile();
-  const supabase = createClient();
-  const lang = getLang();
-
-  // Scoped to the current user explicitly (admins' RLS would otherwise return
-  // everyone). Filtered by month client-side.
-  const { data: logs } = await supabase
-    .from("time_logs")
-    .select("*")
-    .eq("user_id", userId)
-    .order("work_date", { ascending: false })
-    .order("start_time", { ascending: false });
+  useEffect(() => {
+    if (user) fetchMyLogs(user.id).then(setLogs);
+  }, [user]);
 
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl text-fg">{t(lang, "history.title")}</h1>
-        <p className="text-base text-fg-muted">{t(lang, "history.subtitle")}</p>
+        <h1 className="text-2xl text-fg">{t("history.title")}</h1>
+        <p className="text-base text-fg-muted">{t("history.subtitle")}</p>
       </div>
-      <MonthReport logs={(logs ?? []) as TimeLog[]} />
+      <MonthReport logs={logs} />
     </div>
   );
 }
