@@ -121,11 +121,47 @@ export async function createUser(input: {
   });
   if (!error) return { ok: true };
 
+  return { ok: false, key: rpcErrorKey(error.message) };
+}
+
+/** Update a user's name, email and role (admin only). */
+export async function updateUser(input: {
+  userId: string;
+  full_name: string;
+  email: string;
+  role: string;
+}): Promise<ApiResult> {
+  const supabase = createClient();
+  const { error } = await supabase.rpc("admin_update_user", {
+    p_user_id: input.userId,
+    p_full_name: input.full_name,
+    p_email: input.email,
+    p_role: input.role,
+  });
+  return error ? { ok: false, key: rpcErrorKey(error.message) } : { ok: true };
+}
+
+/** Reset a user's password (admin only). */
+export async function setPassword(
+  userId: string,
+  password: string
+): Promise<ApiResult> {
+  const supabase = createClient();
+  const { error } = await supabase.rpc("admin_set_password", {
+    p_user_id: userId,
+    p_password: password,
+  });
+  return error ? { ok: false, key: rpcErrorKey(error.message) } : { ok: true };
+}
+
+/** Map a raise-exception message from the admin RPCs to an i18n key. */
+function rpcErrorKey(message?: string): string {
   const map: Record<string, string> = {
     forbidden: "users.errForbidden",
     invalid_email: "users.errEmail",
     weak_password: "users.errPassword",
     email_exists: "users.errExists",
+    not_found: "users.errNotFound",
   };
-  return { ok: false, key: map[error.message?.trim()] ?? "users.errFailed" };
+  return map[(message ?? "").trim()] ?? "users.errFailed";
 }

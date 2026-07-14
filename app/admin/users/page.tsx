@@ -28,7 +28,7 @@ export default function UsersPage() {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
         <CreateUserForm onCreated={load} />
-        <UsersList profiles={profiles} />
+        <UsersList profiles={profiles} onChanged={load} />
       </div>
     </div>
   );
