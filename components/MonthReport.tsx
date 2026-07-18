@@ -1,19 +1,30 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { CalendarDays } from "lucide-react";
+import { Fragment, useMemo, useState } from "react";
+import { CalendarDays, Pencil } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
+import { EditLogForm } from "@/components/EditLogForm";
 import { durationHours, formatHoursLabel, hhmm, todayISO } from "@/lib/time";
 import { useLang } from "@/components/LangProvider";
 import type { TimeLog } from "@/lib/types";
 
-// "My reports": pick a month, see every entry for it + the monthly total.
-// Filters a preloaded list client-side (instant, no round-trips).
-export function MonthReport({ logs }: { logs: TimeLog[] }) {
+// "My reports": pick a month, see every entry for it + the monthly total, and
+// edit any entry inline. Filters a preloaded list client-side.
+export function MonthReport({
+  logs,
+  userId,
+  onChanged,
+}: {
+  logs: TimeLog[];
+  userId: string;
+  onChanged: () => void;
+}) {
   const { t } = useLang();
   const [month, setMonth] = useState(todayISO().slice(0, 7)); // YYYY-MM
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const today = todayISO();
 
   const rows = useMemo(
     () =>
@@ -42,7 +53,7 @@ export function MonthReport({ logs }: { logs: TimeLog[] }) {
               type="month"
               dir="ltr"
               value={month}
-              max={todayISO().slice(0, 7)}
+              max={today.slice(0, 7)}
               onChange={(e) => setMonth(e.target.value)}
             />
           </Field>
@@ -59,7 +70,7 @@ export function MonthReport({ logs }: { logs: TimeLog[] }) {
 
       <Card className="overflow-hidden p-0">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[520px]">
+          <table className="w-full min-w-[560px]">
             <thead>
               <tr className="border-b border-border bg-surface-alt text-xs font-semibold text-fg-secondary">
                 <th className="px-4 py-3 text-start font-semibold">{t("th.date")}</th>
@@ -68,13 +79,14 @@ export function MonthReport({ logs }: { logs: TimeLog[] }) {
                 <th className="px-4 py-3 text-start font-semibold">
                   {t("th.description")}
                 </th>
+                <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody>
               {rows.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={5}
                     className="px-4 py-12 text-center text-base text-fg-muted"
                   >
                     {t("history.empty")}
@@ -82,23 +94,52 @@ export function MonthReport({ logs }: { logs: TimeLog[] }) {
                 </tr>
               ) : (
                 rows.map((r) => (
-                  <tr
-                    key={r.id}
-                    className="border-b border-border last:border-0 hover:bg-surface-alt/50"
-                  >
-                    <td className="num px-4 py-3 text-sm font-medium text-fg">
-                      {r.work_date}
-                    </td>
-                    <td className="num px-4 py-3 text-sm text-fg-secondary">
-                      {hhmm(r.start_time)}–{hhmm(r.end_time)}
-                    </td>
-                    <td className="num px-4 py-3 text-sm font-semibold text-fg">
-                      {formatHoursLabel(durationHours(r.start_time, r.end_time))}
-                    </td>
-                    <td className="max-w-[280px] px-4 py-3 text-sm text-fg-muted">
-                      <span className="line-clamp-2">{r.description || "—"}</span>
-                    </td>
-                  </tr>
+                  <Fragment key={r.id}>
+                    <tr
+                      className="border-b border-border last:border-0 hover:bg-surface-alt/50"
+                    >
+                      <td className="num px-4 py-3 text-sm font-medium text-fg">
+                        {r.work_date}
+                      </td>
+                      <td className="num px-4 py-3 text-sm text-fg-secondary">
+                        {hhmm(r.start_time)}–{hhmm(r.end_time)}
+                      </td>
+                      <td className="num px-4 py-3 text-sm font-semibold text-fg">
+                        {formatHoursLabel(durationHours(r.start_time, r.end_time))}
+                      </td>
+                      <td className="max-w-[240px] px-4 py-3 text-sm text-fg-muted">
+                        <span className="line-clamp-2">{r.description || "—"}</span>
+                      </td>
+                      <td className="px-2 py-3 text-end">
+                        <button
+                          type="button"
+                          aria-label={t("recent.edit")}
+                          onClick={() =>
+                            setEditingId((id) => (id === r.id ? null : r.id))
+                          }
+                          className="rounded-md p-2 text-fg-muted transition-colors duration-fast hover:bg-surface-alt hover:text-primary"
+                        >
+                          <Pencil size={16} strokeWidth={1.75} />
+                        </button>
+                      </td>
+                    </tr>
+                    {editingId === r.id && (
+                      <tr>
+                        <td colSpan={5} className="px-4 pb-4">
+                          <EditLogForm
+                            log={r}
+                            userId={userId}
+                            maxDate={today}
+                            onCancel={() => setEditingId(null)}
+                            onDone={() => {
+                              setEditingId(null);
+                              onChanged();
+                            }}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 ))
               )}
             </tbody>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { MonthReport } from "@/components/MonthReport";
 import { useAuth } from "@/components/AuthProvider";
 import { useLang } from "@/components/LangProvider";
@@ -12,9 +12,13 @@ export default function HistoryPage() {
   const { t } = useLang();
   const [logs, setLogs] = useState<TimeLog[]>([]);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     if (user) fetchMyLogs(user.id).then(setLogs);
   }, [user]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   return (
     <div>
@@ -22,7 +26,7 @@ export default function HistoryPage() {
         <h1 className="text-2xl text-fg">{t("history.title")}</h1>
         <p className="text-base text-fg-muted">{t("history.subtitle")}</p>
       </div>
-      <MonthReport logs={logs} />
+      <MonthReport logs={logs} userId={user?.id ?? ""} onChanged={load} />
     </div>
   );
 }
