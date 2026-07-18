@@ -72,6 +72,54 @@ export async function addLog(input: {
   return { ok: true };
 }
 
+/** Update one of the user's own logs. Same validation as addLog, but the
+ *  overlap check excludes the row being edited. */
+export async function updateLog(input: {
+  id: string;
+  userId: string;
+  work_date: string;
+  start_time: string;
+  end_time: string;
+  description: string;
+}): Promise<ApiResult> {
+  const { id, userId, work_date, start_time, end_time, description } = input;
+
+  if (!work_date || !start_time || !end_time) return { ok: false, key: "err.required" };
+  if (work_date > todayISO()) return { ok: false, key: "err.future" };
+  if (toMinutes(end_time) <= toMinutes(start_time)) return { ok: false, key: "err.order" };
+
+  const supabase = createClient();
+
+  const { data: sameDay } = await supabase
+    .from("time_logs")
+    .select("start_time, end_time")
+    .eq("user_id", userId)
+    .eq("work_date", work_date)
+    .neq("id", id);
+
+  const s = toMinutes(start_time);
+  const e = toMinutes(end_time);
+  const clash = (sameDay ?? []).some(
+    (r) => s < toMinutes(r.end_time) && toMinutes(r.start_time) < e
+  );
+  if (clash) return { ok: false, key: "err.overlap" };
+
+  const { error } = await supabase
+    .from("time_logs")
+    .update({ work_date, start_time, end_time, description: description || null })
+    .eq("id", id)
+    .eq("user_id", userId);
+
+  if (error) {
+    if (error.code === "23P01") return { ok: false, key: "err.overlap" };
+    if (error.code === "23514") return { ok: false, key: "err.invalid" };
+    if (error.message?.includes("עתידי") || error.message?.includes("future"))
+      return { ok: false, key: "err.future" };
+    return { ok: false, key: "err.saveFailed" };
+  }
+  return { ok: true };
+}
+
 /** Delete one of the user's own logs (RLS enforces ownership). */
 export async function deleteLog(id: string, userId: string): Promise<ApiResult> {
   const supabase = createClient();

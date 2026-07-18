@@ -59,6 +59,10 @@ const en: Dict = {
   "form.save": "Save entry",
   "form.saving": "Saving…",
   "form.success": "Entry saved successfully.",
+  "form.editTitle": "Edit entry",
+  "form.saveChanges": "Save changes",
+  "form.cancel": "Cancel",
+  "form.updated": "Entry updated.",
   "time.hh": "HH",
   "time.mm": "MM",
 
@@ -78,6 +82,7 @@ const en: Dict = {
   "recent.empty": "No entries yet — start above.",
   "recent.confirmDelete": "Delete this entry?",
   "recent.delete": "Delete",
+  "recent.edit": "Edit",
 
   // history
   "history.title": "My reports",
@@ -200,6 +205,10 @@ const he: Dict = {
   "form.save": "שמירת דיווח",
   "form.saving": "שומר…",
   "form.success": "הדיווח נשמר בהצלחה.",
+  "form.editTitle": "עריכת דיווח",
+  "form.saveChanges": "שמירת שינויים",
+  "form.cancel": "ביטול",
+  "form.updated": "הדיווח עודכן.",
   "time.hh": "שעה",
   "time.mm": "דקה",
 
@@ -217,6 +226,7 @@ const he: Dict = {
   "recent.empty": "עדיין אין דיווחים — התחילו למעלה.",
   "recent.confirmDelete": "למחוק את הדיווח?",
   "recent.delete": "מחיקה",
+  "recent.edit": "עריכה",
 
   "history.title": "הדיווחים שלי",
   "history.subtitle": "בחרו חודש כדי לראות את כל הדיווחים שלו.",

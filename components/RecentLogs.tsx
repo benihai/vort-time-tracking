@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2, Clock3 } from "lucide-react";
+import { Trash2, Pencil, Clock3 } from "lucide-react";
 import { deleteLog } from "@/lib/api";
 import { Card, CardTitle } from "@/components/ui/Card";
-import { durationHours, formatHoursLabel, hhmm } from "@/lib/time";
+import { EditLogForm } from "@/components/EditLogForm";
+import { durationHours, formatHoursLabel, hhmm, todayISO } from "@/lib/time";
 import { useLang } from "@/components/LangProvider";
 import type { TimeLog } from "@/lib/types";
 
@@ -19,7 +20,8 @@ export function RecentLogs({
 }) {
   const { t } = useLang();
   const [busyId, setBusyId] = useState<string | null>(null);
-  const pending = busyId !== null;
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const today = todayISO();
 
   async function onDelete(id: string) {
     if (!confirm(t("recent.confirmDelete"))) return;
@@ -41,36 +43,62 @@ export function RecentLogs({
       ) : (
         <ul className="flex flex-col divide-y divide-border">
           {logs.map((log) => (
-            <li key={log.id} className="flex items-center gap-3 py-3">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="num text-sm font-semibold text-fg">
-                    {log.work_date}
-                  </span>
-                  <span className="num text-sm text-fg-muted">
-                    {hhmm(log.start_time)}–{hhmm(log.end_time)}
-                  </span>
+            <li key={log.id} className="py-3">
+              <div className="flex items-center gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="num text-sm font-semibold text-fg">
+                      {log.work_date}
+                    </span>
+                    <span className="num text-sm text-fg-muted">
+                      {hhmm(log.start_time)}–{hhmm(log.end_time)}
+                    </span>
+                  </div>
+                  {log.description && (
+                    <p className="mt-0.5 truncate text-sm text-fg-muted">
+                      {log.description}
+                    </p>
+                  )}
                 </div>
-                {log.description && (
-                  <p className="mt-0.5 truncate text-sm text-fg-muted">
-                    {log.description}
-                  </p>
-                )}
+
+                <span className="num shrink-0 rounded-full bg-surface-alt px-2.5 py-1 text-xs font-semibold text-fg-secondary">
+                  {formatHoursLabel(durationHours(log.start_time, log.end_time))}
+                </span>
+
+                <button
+                  type="button"
+                  aria-label={t("recent.edit")}
+                  onClick={() =>
+                    setEditingId((id) => (id === log.id ? null : log.id))
+                  }
+                  className="rounded-md p-2 text-fg-muted transition-colors duration-fast hover:bg-surface-alt hover:text-primary"
+                >
+                  <Pencil size={16} strokeWidth={1.75} />
+                </button>
+
+                <button
+                  type="button"
+                  aria-label={t("recent.delete")}
+                  onClick={() => onDelete(log.id)}
+                  disabled={busyId === log.id}
+                  className="rounded-md p-2 text-fg-muted transition-colors duration-fast hover:bg-surface-alt hover:text-destructive disabled:opacity-50"
+                >
+                  <Trash2 size={16} strokeWidth={1.75} />
+                </button>
               </div>
 
-              <span className="num shrink-0 rounded-full bg-surface-alt px-2.5 py-1 text-xs font-semibold text-fg-secondary">
-                {formatHoursLabel(durationHours(log.start_time, log.end_time))}
-              </span>
-
-              <button
-                type="button"
-                aria-label={t("recent.delete")}
-                onClick={() => onDelete(log.id)}
-                disabled={pending && busyId === log.id}
-                className="rounded-md p-2 text-fg-muted transition-colors duration-fast hover:bg-surface-alt hover:text-destructive disabled:opacity-50"
-              >
-                <Trash2 size={16} strokeWidth={1.75} />
-              </button>
+              {editingId === log.id && (
+                <EditLogForm
+                  log={log}
+                  userId={userId}
+                  maxDate={today}
+                  onCancel={() => setEditingId(null)}
+                  onDone={() => {
+                    setEditingId(null);
+                    onChanged();
+                  }}
+                />
+              )}
             </li>
           ))}
         </ul>
